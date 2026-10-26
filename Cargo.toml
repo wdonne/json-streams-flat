@@ -1,0 +1,39 @@
+[package]
+description = "Create a flat URI space backed by MongoDB aggregations"
+edition = "2024"
+exclude = ["*.iml"]
+homepage = "https://github.com/wdonne/json-streams-flat"
+keywords = ["json-streams"]
+license = "BSD-2-Clause"
+name = "json-streams-flat"
+readme = "README.md"
+repository = "https://github.com/wdonne/json-streams-flat"
+version = "1.0.0"
+
+
+[dependencies]
+anyhow = "1.0.104"
+clap = { version = "4.6.7", features = ["derive"] }
+config = "0.15.27"
+config-util = "1.0.0"
+http = "1.5.0"
+imbl = "7.0.2"
+imbl-util = "1.1.0"
+immutable-json = { version = "1.5.0", features = ["config", "yaml"] }
+iter-util = "1.0.0"
+log = "0.4.34"
+minijinja = { version = "3.0.3", features = ["serde"] }
+reqwest = { version = "0.13.5", features = [
+    "gzip",
+    "json",
+    "rustls",
+    "stream",
+] }
+rust-yaml = "1.1.0"
+salvo = "1.0.1"
+salvo-from-config = "1.0.0"
+serde = "1.0.229"
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["full"] }
+url = "2.5.8"

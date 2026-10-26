@@ -1,0 +1,586 @@
+log-level: debug
+cert-folder: /Users/werner
+#ca-file: /Users/werner/ca.pem
+client-auth: true
+json-streams-endpoint: http://localhost:9000
+handlers:
+  - path: /support-question/care-reception
+    json-streams-path: /api/zorglink/zorglink-support-question-view
+    aggregation:
+      - $match:
+          learningSupportCenterId:
+            $in:
+              - ${learningSupportCenterId}
+          schoolEntity._id:
+            $ne: 1
+      - $set:
+          schoolEntityName:
+            $ifNull: ["$schoolEntity.name", ""]
+      - $set:
+          schoolEntityName:
+            $cond:
+              if:
+                $ne: ["$schoolEntityName", ""]
+              then:
+                $concat: [" - ", "$schoolEntityName"]
+              else: ""
+      - $set:
+          student.name:
+            $concat: ["$student.firstName", " ", "$student.lastName"]
+          school.details:
+            $concat:
+              [
+                "$school.institutionNumber",
+                " - ",
+                "$school.name",
+                ", ",
+                "$school.street",
+                ", ",
+                "$school.zipcode",
+                " ",
+                "$school.city",
+              ]
+          schoolEntity.details:
+            $concat: ["$schoolEntity.schoolEntity.displayName", "$schoolEntityName"]
+      - $match:
+          supportQuestion.status:
+            $in: ["OPEN", "INCOMPLETE"]
+      - $match:
+          schoolYear:
+            $in: ["2026 - 2027"]
+      - $sort:
+          creationDate: -1
+      - $limit: 10
+
+  - path: /support-question/care-reception2
+    json-streams-path: /api/zorglink/zorglink-support-question-view
+    aggregation: |
+      {% for i in test %}
+      - $match:
+          TEST:
+            $in:
+              - {{ i }}
+      {% endfor %}
+      - $match:
+          learningSupportCenterId:
+            $in:
+              - {{ test.learningSupportCenterId }}
+          schoolEntity._id:
+            $ne: 1
+      - $set:
+          schoolEntityName:
+            $ifNull: ["$schoolEntity.name", ""]
+      - $set:
+          schoolEntityName:
+            $cond:
+              if:
+                $ne: ["$schoolEntityName", ""]
+              then:
+                $concat: [" - ", "$schoolEntityName"]
+              else: ""
+      - $set:
+          student.name:
+            $concat: ["$student.firstName", " ", "$student.lastName"]
+          school.details:
+            $concat:
+              [
+                "$school.institutionNumber",
+                " - ",
+                "$school.name",
+                ", ",
+                "$school.street",
+                ", ",
+                "$school.zipcode",
+                " ",
+                "$school.city",
+              ]
+          schoolEntity.details:
+            $concat: ["$schoolEntity.schoolEntity.displayName", "$schoolEntityName"]
+      - $match:
+          supportQuestion.status:
+            $in: ["OPEN", "INCOMPLETE"]
+      - $match:
+          schoolYear:
+            $in: ["2026 - 2027"]
+      - $sort:
+          creationDate: -1
+      - $limit: 10
+
+  - path: /support-question/care-reception/filters
+    json-streams-path: /api/zorglink/zorglink-support-question-view
+    aggregation: []
+
+  - path: /support-question/care-reception-filter
+    json-streams-path: /api/zorglink/zorglink-support-question-view
+    aggregation:
+      - $match:
+          learningSupportCenterId:
+            $in:
+              - ${learningSupportCenterId}
+          schoolEntity._id:
+            $ne: 1
+      - $set:
+          schoolEntityName:
+            $ifNull: ["$schoolEntity.name", ""]
+      - $set:
+          schoolEntityName:
+            $cond:
+              if:
+                $ne: ["$schoolEntityName", ""]
+              then:
+                $concat: [" - ", "$schoolEntityName"]
+              else: ""
+      - $set:
+          student.name:
+            $concat: ["$student.firstName", " ", "$student.lastName"]
+          school.details:
+            $concat:
+              [
+                "$school.institutionNumber",
+                " - ",
+                "$school.name",
+                ", ",
+                "$school.street",
+                ", ",
+                "$school.zipcode",
+                " ",
+                "$school.city",
+              ]
+          schoolEntity.details:
+            $concat: ["$schoolEntity.schoolEntity.displayName", "$schoolEntityName"]
+
+      - $match:
+          $expr:
+            $and:
+              - $or:
+                  - $in:
+                      - ${schoolYears}
+                      - ["", null, []]
+                  - $in:
+                      - "$schoolYear"
+                      - $cond:
+                          - $isArray:
+                              $literal: ${schoolYears}
+                          - ${schoolYears}
+                          - []
+              - $or:
+                  - $in:
+                      - ${statuses}
+                      - ["", null, []]
+                  - $in:
+                      - "$supportQuestion.status"
+                      - $cond:
+                          - $isArray:
+                              $literal: ${statuses}
+                          - ${statuses}
+                          - []
+              - $or:
+                  - $in:
+                      - ${teams}
+                      - ["", null, []]
+                  - $in:
+                      - "$team.name"
+                      - $cond:
+                          - $isArray:
+                              $literal: ${teams}
+                          - ${teams}
+                          - []
+              - $or:
+                  - $in:
+                      - ${assignees}
+                      - ["", null, []]
+                  - $in:
+                      - "$trajectory.assignee.displayName"
+                      - $cond:
+                          - $isArray:
+                              $literal: ${assignees}
+                          - ${assignees}
+                          - []
+
+      - $group:
+          _id: ${filterField}
+          key:
+            $max: ${filterField}
+          count:
+            $sum: 1
+      - $sort:
+          key: 1
+
+  - path: /support-question/school-file-support-questions
+    json-streams-path: /api/zorglink/zorglink-support-question-view
+    aggregation:
+      - $match:
+          learningSupportCenterId:
+            $in:
+              - ${learningSupportCenterId}
+          schoolEntity._id: ${schoolEntityId}
+      - $set:
+          schoolEntityName:
+            $ifNull: ["$schoolEntity.name", ""]
+      - $set:
+          schoolEntityName:
+            $cond:
+              if:
+                $ne: ["$schoolEntityName", ""]
+              then:
+                $concat: [" - ", "$schoolEntityName"]
+              else: ""
+      - $set:
+          student.name:
+            $concat: ["$student.firstName", " ", "$student.lastName"]
+          school.details:
+            $concat:
+              [
+                "$school.institutionNumber",
+                " - ",
+                "$school.name",
+                ", ",
+                "$school.street",
+                ", ",
+                "$school.zipcode",
+                " ",
+                "$school.city",
+              ]
+          schoolEntity.details:
+            $concat: ["$schoolEntity.schoolEntity.displayName", "$schoolEntityName"]
+      - $match:
+          supportQuestion.status:
+            $in: ["OPEN", "INCOMPLETE"]
+      - $match:
+          schoolYear:
+            $in: ["2026 - 2027"]
+      - $sort:
+          creationDate: -1
+      - $facet:
+          data:
+            - $skip: 0
+            - $limit: 50
+          pagination:
+            - $count: count
+
+  - path: /support-question/related-questions
+    json-streams-path: /api/zorglink/zorglink-support-question-view
+    aggregation: []
+
+  - path: /user/logged-user
+    json-streams-path: /api/zorglink/zorglink-user
+    aggregation:
+      - $set:
+          learningSupportCenters:
+            $map:
+              input: "$logins"
+              as: login
+              in:
+                idp: "$$login.idp"
+                name: "$$login.idp"
+                _id: "$$login.learningSupportCenterId"
+      - $unwind:
+          path: "$logins"
+      - $match:
+          logins.learningSupportCenterId: ${learningSupportCenterId}
+          "$expr":
+            "$or":
+              - "$and":
+                  - "$ne": ["${email}", null]
+                  - "$eq": ["$toLower": "$email", "$toLower": "${email}"]
+              - "$and":
+                  - "$ne": ["$sub", null]
+                  - "$eq": ["$sub", "${sub}"]
+      - $set:
+          learningSupportCenterId: "$logins.learningSupportCenterId"
+          version: 1.0
+
+  - path: /user/lsc-users
+    json-streams-path: /api/zorglink/zorglink-users-view
+    aggregation:
+      - $match:
+          roles:
+            $in: ["SUPPORTER", "COORDINATOR"]
+          logins.learningSupportCenterId: ${learningSupportCenterId}
+      - $project:
+          _id: 1
+          firstName: 1
+          lastName: 1
+          displayName: 1
+
+  - path: /user/school-and-lsc-users
+    json-streams-path: /api/zorglink/zorglink-users-view
+    aggregation:
+      - $match:
+          $or:
+            - schools._id: ${schoolId}
+            - logins.learningSupportCenterId: ${learningSupportCenterId}
+              logins.active: true
+      - $project:
+          firstName: 1
+          lastName: 1
+      - $sort:
+          firstName: 1
+          lastName: 1
+
+  - path: /user/school-users
+    json-streams-path: /api/zorglink/zorglink-user
+    aggregation:
+      - $unwind: "$logins"
+      - $match:
+          logins.roles: GUEST
+          logins.school._id: ${schoolId}
+      - $sort:
+          lastName: 1
+      - $facet:
+          data:
+            - $skip: 0
+            - $limit: 50
+          pagination:
+            - $count: count
+
+  - path: /team/lsc-teams
+    json-streams-path: /api/zorglink/zorglink-team
+    aggregation:
+      - $match:
+          learningSupportCenterId: ${learningSupportCenterId}
+      - $sort:
+          name: 1
+
+  - path: /support-question/student-journal
+    json-streams-path: /api/zorglink/zorglink-support-question-view
+    aggregation:
+      - $match:
+          learningSupportCenterId:
+            $in: ${learningSupportCenterIds}
+          student._id: ${studentId}
+      - $group:
+          _id: "$schoolYear"
+          supportQuestions:
+            $push: "$$ROOT"
+      - $sort:
+          _id: -1
+
+  - path: /school-trajectory/school-journal
+    json-streams-path: /api/zorglink/zorglink-school-trajectory-view
+    aggregation:
+      - $match:
+          schoolEntity._id: ${schoolEntityId}
+      - $set:
+          schoolEntityName:
+            $ifNull: ["$schoolEntity.name", ""]
+      - $set:
+          schoolEntityName:
+            $cond:
+              if:
+                $ne: ["$schoolEntityName", ""]
+              then:
+                $concat: [" - ", "$schoolEntityName"]
+              else: ""
+      - $set:
+          schoolEntity.details:
+            $concat: ["$schoolEntity.schoolEntity.displayName", "$schoolEntityName"]
+      - $sort:
+          creationDate: -1
+
+  - path: /activity/trajectory-activities
+    json-streams-path: /api/zorglink/zorglink-activity-view
+    aggregation:
+      - $match:
+          learningSupportCenterId:
+            $in:
+              - ${learningSupportCenterId}
+          trajectory:
+            $exists: true
+          schoolEntity._id:
+            $ne: 1
+      - $set:
+          schoolEntityName:
+            $ifNull: ["$schoolEntity.name", ""]
+      - $set:
+          schoolEntityName:
+            $cond:
+              if:
+                $ne: ["$schoolEntityName", ""]
+              then:
+                $concat: [" - ", "$schoolEntityName"]
+              else: ""
+      - $set:
+          student.name:
+            $concat: ["$student.firstName", " ", "$student.lastName"]
+          school.details:
+            $concat:
+              [
+                "$school.institutionNumber",
+                " - ",
+                "$school.name",
+                ", ",
+                "$school.street",
+                ", ",
+                "$school.zipcode",
+                " ",
+                "$school.city",
+              ]
+          schoolEntity.details:
+            $concat: ["$schoolEntity.schoolEntity.displayName", "$schoolEntityName"]
+      - $match:
+          supportQuestion.status:
+            $in: ["OPEN", "INCOMPLETE"]
+      - $match:
+          schoolYear:
+            $in: ["2025 - 2026"]
+      - $sort:
+          creationDate: -1
+      - $limit: 10
+
+  - path: /user/logged-school-user
+    json-streams-path: /api/zorglink/zorglink-user
+    aggregation:
+      - $match:
+          $expr:
+            $or:
+              - $eq: ["$sub", "${sub}"]
+              - $eq: ["$userId", "${sub}"]
+      - $set:
+          rejectedSchoolIds:
+            $map:
+              input:
+                $filter:
+                  input: "$logins"
+                  as: login
+                  cond:
+                    $eq: ["$$login.status", "REJECTED"]
+              as: item
+              in: "$$item.school._id"
+      - $set:
+          schools:
+            $filter:
+              input:
+                $ifNull: ["$schools", []]
+              as: school
+              cond:
+                $not:
+                  $in: ["$$school._id", "$rejectedSchoolIds"]
+          logins:
+            $filter:
+              input:
+                $ifNull: ["$logins", []]
+              as: login
+              cond:
+                $not:
+                  $in: ["$$login.school._id", "$rejectedSchoolIds"]
+
+  - path: /contact/school-file-contacts
+    json-streams-path: /api/zorglink/zorglink-contact
+    aggregation:
+      - $match:
+          referenceId: ${referenceId}
+      - $sort:
+          firstName: 1
+          lastName: 1
+          email: 1
+      - $facet:
+          data:
+            - $skip: 0
+            - $limit: 50
+          pagination:
+            - $count: count
+
+  - path: /supporter/school-lsc-users
+    json-streams-path: /api/zorglink/zorglink-supporters-view
+    aggregation:
+      - $match:
+          _id: ${schoolId}
+      - $unwind:
+          path: "$users"
+      - $group:
+          _id: "$users._id"
+          doc:
+            $first: "$users"
+      - $group:
+          _id: null
+          unique:
+            $push: "$doc"
+      - $unwind:
+          path: "$unique"
+      - $replaceRoot:
+          newRoot: "$unique"
+      - $sort:
+          lastName: 1
+      - $facet:
+          data:
+            - $skip: 0
+            - $limit: 50
+          pagination:
+            - $count: count
+
+  - path: /weight/lsc-weights
+    json-streams-path: /api/zorglink/zorglink-weight
+    aggregation:
+      - $match:
+          learningSupportCenterId: ${learningSupportCenterId}
+
+  - path: /weight/global
+    json-streams-path: /api/zorglink/zorglink-weight
+    aggregation:
+      - $match:
+          learningSupportCenterId:
+            $exists: false
+
+  - path: /comment/question-comments
+    json-streams-path: /api/zorglink/zorglink-comment
+    aggregation:
+      - $match:
+          supportQuestionId: ${supportQuestionId}
+          type:
+            $in: ["SUPPORT_QUESTION", "TRAJECTORY"]
+      - $sort:
+          creationDate: -1
+
+  - path: /support-question/activities
+    json-streams-path: /api/zorglink/zorglink-activity-view
+    aggregation:
+      - $match:
+          $or:
+            - trajectory.id: ${trajectoryId}
+            - supportQuestionIds: ${supportQuestionId}
+            - groupStudents.studentId: ${studentId}
+      - $sort:
+          from: -1
+      - $project:
+          type: 1
+          title: 1
+          activityType: 1
+          activityDate: 1
+          creator:
+            _id:
+              $ifNull: ["$creator._id", "$creatorId"]
+            firstName: 1
+            lastName: 1
+            displayName: 1
+            profileImageUrl: 1
+          calendar:
+            webLink: 1
+          text: 1
+          from: 1
+          to: 1
+          participants: 1
+          groupStudents:
+            $filter:
+              input: "$groupStudents"
+              as: gs
+              cond:
+                $eq:
+                  - "$$gs.studentId"
+                  - ${studentId}
+
+  - path: /support-question/history
+    json-streams-path: /api/zorglink/zorglink-support-question-log
+    aggregation:
+      - $match:
+          _id: ${supportQuestionId}
+      - $unwind:
+          path: "$events"
+      - $project:
+          events: 1
+      - $replaceRoot:
+          newRoot: "$events"
+      - $sort:
+          timestamp: -1
+      - $set:
+          user.displayName: "$user.name"
